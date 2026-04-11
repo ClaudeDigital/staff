@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Manager - Pastrimi</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>🧹 Staff Manager</h1>
+    <p>Menaxhim i punëtorëve të pastrimit</p>
+    <form id="login-form">
+      <div class="form-group">
+        <label>Përdoruesi</label>
+        <input type="text" id="login-user" autocomplete="username" required>
+      </div>
+      <div class="form-group">
+        <label>Fjalëkalimi</label>
+        <input type="password" id="login-pass" autocomplete="current-password" required>
+      </div>
+      <div id="login-error" style="color:#ef4444;font-size:0.85rem;margin-bottom:12px;display:none;"></div>
+      <button type="submit" class="btn btn-primary w-full" style="justify-content:center;">Hyr</button>
+    </form>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2>🧹 Staff Manager</h2>
+      <p>Menaxhim pastrimi</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-page="dashboard">
+        <span class="icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" data-page="workers">
+        <span class="icon">👷</span> Punëtorët
+      </div>
+      <div class="nav-item" data-page="locations">
+        <span class="icon">📍</span> Lokacionet
+      </div>
+      <div class="nav-item" data-page="shifts">
+        <span class="icon">📅</span> Turnet
+      </div>
+      <div class="nav-item" data-page="reports">
+        <span class="icon">📋</span> Raportet
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn btn-ghost w-full" id="logout-btn" style="justify-content:center;">Dil</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button id="sidebar-toggle" style="background:none;border:none;font-size:1.3rem;cursor:pointer;display:none;">☰</button>
+        <h1 id="page-title">Dashboard</h1>
+      </div>
+      <div id="topbar-actions"></div>
+    </div>
+
+    <div class="page-content">
+      <!-- DASHBOARD -->
+      <div id="page-dashboard">
+        <div class="stats-grid" id="stats-grid"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;flex-wrap:wrap;" id="dashboard-grid">
+          <div class="card" style="grid-column:1/-1;">
+            <div class="card-header">
+              <h3>📅 Pamje Javore</h3>
+              <div class="week-nav">
+                <button class="btn btn-ghost btn-sm" id="week-prev">← Para</button>
+                <span class="week-label" id="week-label"></span>
+                <button class="btn btn-ghost btn-sm" id="week-next">Pas →</button>
+                <button class="btn btn-ghost btn-sm" id="week-today">Sot</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="week-grid" id="week-grid"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>☀️ Turnet e Sotme</h3></div>
+            <div class="card-body">
+              <div id="today-list"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>👷 Orët Këtë Muaj</h3></div>
+            <div class="card-body">
+              <div id="month-summary"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WORKERS -->
+      <div id="page-workers" class="hidden">
+        <div id="workers-list-view">
+          <div class="card">
+            <div class="card-header">
+              <h3>Të gjithë punëtorët</h3>
+              <button class="btn btn-primary btn-sm" id="add-worker-btn">+ Shto Punëtor</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Emri</th><th>Telefoni</th><th>Shënim</th><th>Orët (muaj)</th><th></th></tr>
+                </thead>
+                <tbody id="workers-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div id="worker-detail-view" class="hidden"></div>
+      </div>
+
+      <!-- LOCATIONS -->
+      <div id="page-locations" class="hidden">
+        <div id="locations-list-view">
+          <div class="card">
+            <div class="card-header">
+              <h3>Të gjitha lokacionet</h3>
+              <button class="btn btn-primary btn-sm" id="add-location-btn">+ Shto Lokacion</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Emri</th><th>Adresa</th><th>Shënim</th><th></th></tr>
+                </thead>
+                <tbody id="locations-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div id="location-detail-view" class="hidden"></div>
+      </div>
+
+      <!-- SHIFTS -->
+      <div id="page-shifts" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h3>Të gjitha turnet</h3>
+            <div class="btn-group">
+              <select id="shift-filter-status" style="min-width:130px;">
+                <option value="">Të gjitha statuset</option>
+                <option value="planned">I planifikuar</option>
+                <option value="completed">I kryer</option>
+                <option value="cancelled">I anuluar</option>
+              </select>
+              <button class="btn btn-primary btn-sm" id="add-shift-btn">+ Shto Turn</button>
+            </div>
+          </div>
+          <div class="card-body" style="padding:12px 20px;">
+            <div class="filters-bar">
+              <div class="filter-group">
+                <label>Data nga</label>
+                <input type="date" id="shift-date-from">
+              </div>
+              <div class="filter-group">
+                <label>Data deri</label>
+                <input type="date" id="shift-date-to">
+              </div>
+              <div class="filter-group">
+                <label>Punëtori</label>
+                <select id="shift-filter-worker"><option value="">Të gjithë</option></select>
+              </div>
+              <div class="filter-group">
+                <label>Lokacioni</label>
+                <select id="shift-filter-location"><option value="">Të gjithë</option></select>
+              </div>
+              <button class="btn btn-primary btn-sm" id="shift-filter-btn" style="align-self:flex-end;">Filtro</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Data</th><th>Ora</th><th>Punëtori</th><th>Lokacioni</th><th>Orët</th><th>Statusi</th><th></th></tr>
+              </thead>
+              <tbody id="shifts-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPORTS -->
+      <div id="page-reports" class="hidden">
+        <div class="card mb-16">
+          <div class="card-body">
+            <div class="filters-bar">
+              <div class="filter-group">
+                <label>Data nga</label>
+                <input type="date" id="rep-date-from">
+              </div>
+              <div class="filter-group">
+                <label>Data deri</label>
+                <input type="date" id="rep-date-to">
+              </div>
+              <div class="filter-group">
+                <label>Punëtori</label>
+                <select id="rep-worker"><option value="">Të gjithë</option></select>
+              </div>
+              <div class="filter-group">
+                <label>Lokacioni</label>
+                <select id="rep-location"><option value="">Të gjithë</option></select>
+              </div>
+              <button class="btn btn-primary" id="rep-run-btn">Shfaq Raportin</button>
+              <button class="btn btn-ghost no-print" id="rep-print-btn">🖨️ Printo</button>
+            </div>
+          </div>
+        </div>
+        <div class="card" id="report-output" style="display:none;">
+          <div class="card-header">
+            <h3 id="report-title">Raport</h3>
+            <span id="report-total-badge" style="font-weight:700;color:var(--primary);"></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Data</th><th>Ora</th><th>Punëtori</th><th>Lokacioni</th><th>Adresa</th><th>Orët</th><th>Statusi</th><th>Shënim</th></tr>
+              </thead>
+              <tbody id="report-tbody"></tbody>
+              <tfoot>
+                <tr class="total-row">
+                  <td colspan="5">TOTAL</td>
+                  <td id="report-total-hours"></td>
+                  <td colspan="2"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <div class="bnav-item active" data-page="dashboard"><span class="icon">📊</span>Dashboard</div>
+      <div class="bnav-item" data-page="workers"><span class="icon">👷</span>Punëtorët</div>
+      <div class="bnav-item" data-page="locations"><span class="icon">📍</span>Lokacionet</div>
+      <div class="bnav-item" data-page="shifts"><span class="icon">📅</span>Turnet</div>
+      <div class="bnav-item" data-page="reports"><span class="icon">📋</span>Raportet</div>
+    </div>
+  </nav>
+</div>
+
+<!-- MODALS -->
+<!-- Worker Modal -->
+<div class="modal-overlay" id="worker-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="worker-modal-title">Shto Punëtor</h3>
+      <button class="close-btn" data-close="worker-modal">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="worker-id">
+      <div class="form-group"><label>Emri i plotë *</label><input type="text" id="worker-name" placeholder="p.sh. Artan Krasniqi"></div>
+      <div class="form-group"><label>Telefoni</label><input type="tel" id="worker-phone" placeholder="+383 ..."></div>
+      <div class="form-group"><label>Shënim</label><textarea id="worker-note" placeholder="Shënim opsional..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-close="worker-modal">Anulo</button>
+      <button class="btn btn-primary" id="worker-save-btn">Ruaj</button>
+    </div>
+  </div>
+</div>
+
+<!-- Location Modal -->
+<div class="modal-overlay" id="location-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="location-modal-title">Shto Lokacion</h3>
+      <button class="close-btn" data-close="location-modal">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="location-id">
+      <div class="form-group"><label>Emri / Klienti *</label><input type="text" id="location-name" placeholder="p.sh. Hotel Prishtina"></div>
+      <div class="form-group"><label>Adresa *</label><input type="text" id="location-address" placeholder="p.sh. Rr. UÇK 10, Prishtinë"></div>
+      <div class="form-group"><label>Shënim</label><textarea id="location-note" placeholder="Shënim opsional..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-close="location-modal">Anulo</button>
+      <button class="btn btn-primary" id="location-save-btn">Ruaj</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shift Modal -->
+<div class="modal-overlay" id="shift-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="shift-modal-title">Shto Turn</h3>
+      <button class="close-btn" data-close="shift-modal">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="shift-id">
+      <div class="form-group">
+        <label>Punëtori *</label>
+        <select id="shift-worker-select"></select>
+      </div>
+      <div class="form-group">
+        <label>Lokacioni *</label>
+        <select id="shift-location-select"></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Data *</label><input type="date" id="shift-date"></div>
+        <div class="form-group"><label>Ora e fillimit *</label><input type="time" id="shift-start"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Kohëzgjatja (orë) *</label><input type="number" id="shift-duration" min="0.5" max="24" step="0.5" placeholder="p.sh. 4"></div>
+        <div class="form-group">
+          <label>Statusi</label>
+          <select id="shift-status">
+            <option value="planned">I planifikuar</option>
+            <option value="completed">I kryer</option>
+            <option value="cancelled">I anuluar</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Shënim</label><textarea id="shift-note" placeholder="Shënim opsional..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-close="shift-modal">Anulo</button>
+      <button class="btn btn-primary" id="shift-save-btn">Ruaj</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Dialog -->
+<div id="confirm-overlay">
+  <div class="confirm-box">
+    <h4 id="confirm-title">Konfirmo fshirjen</h4>
+    <p id="confirm-msg">A jeni i sigurt që doni ta fshini këtë?</p>
+    <div class="btn-group">
+      <button class="btn btn-ghost" id="confirm-no">Jo</button>
+      <button class="btn btn-danger" id="confirm-yes">Po, fshi</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

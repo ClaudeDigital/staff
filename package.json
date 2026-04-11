@@ -1,0 +1,15 @@
+{
+  "name": "staff-manager",
+  "version": "1.0.0",
+  "description": "Staff Manager for cleaning workers",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.3",
+    "express-session": "^1.18.0"
+  }
+}
