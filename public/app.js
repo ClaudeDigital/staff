@@ -617,7 +617,7 @@ async function loadShifts() {
   if (statusFilter) shifts = shifts.filter(s => s.status === statusFilter);
 
   document.getElementById('shifts-tbody').innerHTML = shifts.length ? shifts.map(s => `
-    <tr>
+    <tr data-shift-id="${s.id}">
       <td>${fmtDate(s.date)}</td>
       <td>${s.start_time}</td>
       <td>${esc(s.worker_name)}</td>
@@ -654,6 +654,35 @@ async function loadShifts() {
 document.getElementById('shift-filter-btn').onclick = loadShifts;
 document.getElementById('shift-filter-status').onchange = loadShifts;
 document.getElementById('add-shift-btn').onclick = () => openShiftModal();
+
+document.getElementById('shift-delete-filtered-btn').onclick = async () => {
+  const from = document.getElementById('shift-date-from').value;
+  const to   = document.getElementById('shift-date-to').value;
+  const wId  = document.getElementById('shift-filter-worker').value;
+  const lId  = document.getElementById('shift-filter-location').value;
+  const status = document.getElementById('shift-filter-status').value;
+
+  // Count how many are visible
+  const rows = document.querySelectorAll('#shifts-tbody tr[data-shift-id]');
+  const ids  = Array.from(rows).map(r => r.dataset.shiftId).filter(Boolean);
+
+  // Build description
+  let desc = ids.length + ' turn' + (ids.length !== 1 ? 'e' : '');
+  if (from || to) desc += ` (${from ? fmtDate(from) : '…'} – ${to ? fmtDate(to) : '…'})`;
+
+  if (ids.length === 0) return showToast('Nuk ka turne për të fshirë', 'error');
+
+  const ok = await confirm('Fshi në shumicë', `A jeni i sigurt? Do të fshihen ${desc}.`);
+  if (!ok) return;
+
+  let deleted = 0;
+  for (const id of ids) {
+    try { await API('/shifts/' + id, { method: 'DELETE' }); deleted++; } catch {}
+  }
+  showToast(`${deleted} turne u fshinë`, 'success');
+  loadShifts();
+  if (currentPage === 'dashboard') loadDashboard();
+};
 
 function openShiftModal(shift = null, preWorkerId = null, preLocationId = null, preDate = null) {
   const isEdit = !!shift;
