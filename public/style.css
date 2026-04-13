@@ -629,6 +629,29 @@ textarea { resize: vertical; min-height: 80px; }
   .filter-group { min-width: 100%; }
 }
 
+/* ── WORKER CHECKBOX LIST ──────────────────── */
+.worker-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text);
+  transition: background 0.1s;
+  user-select: none;
+}
+.worker-checkbox-item:hover { background: var(--surface); }
+.worker-checkbox-item input[type=checkbox] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.worker-checkbox-item span { flex: 1; }
+
 /* Utility */
 .hidden { display: none !important; }
 .mt-16 { margin-top: 16px; }

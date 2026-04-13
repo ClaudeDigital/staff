@@ -659,21 +659,47 @@ document.getElementById('shift-filter-status').onchange = loadShifts;
 document.getElementById('add-shift-btn').onclick = () => openShiftModal();
 
 function openShiftModal(shift = null, preWorkerId = null, preLocationId = null, preDate = null) {
-  document.getElementById('shift-modal-title').textContent = shift ? 'Edito Turnin' : 'Shto Turn';
-  document.getElementById('shift-id').value = shift ? shift.id : '';
-  document.getElementById('shift-date').value = shift ? shift.date : (preDate || new Date().toISOString().slice(0, 10));
-  document.getElementById('shift-start').value = shift ? shift.start_time : '08:00';
-  document.getElementById('shift-duration').value = shift ? shift.duration_hours : '';
-  document.getElementById('shift-status').value = shift ? shift.status : 'planned';
-  document.getElementById('shift-note').value = shift ? (shift.note || '') : '';
+  const isEdit = !!shift;
+  document.getElementById('shift-modal-title').textContent = isEdit ? 'Edito Turnin' : 'Shto Turn';
+  document.getElementById('shift-id').value = isEdit ? shift.id : '';
+  document.getElementById('shift-date').value = isEdit ? shift.date : (preDate || new Date().toISOString().slice(0, 10));
+  document.getElementById('shift-start').value = isEdit ? shift.start_time : '08:00';
+  document.getElementById('shift-duration').value = isEdit ? shift.duration_hours : '';
+  document.getElementById('shift-status').value = isEdit ? shift.status : 'planned';
+  document.getElementById('shift-note').value = isEdit ? (shift.note || '') : '';
 
-  if (preWorkerId) document.getElementById('shift-worker-select').value = preWorkerId;
-  else if (shift) document.getElementById('shift-worker-select').value = shift.worker_id;
+  // Toggle single vs multi worker
+  document.getElementById('worker-single-group').style.display = isEdit ? '' : 'none';
+  document.getElementById('worker-multi-group').style.display = isEdit ? 'none' : '';
+
+  if (isEdit) {
+    document.getElementById('shift-worker-select').value = shift.worker_id;
+  } else {
+    // Build checkbox list
+    const list = document.getElementById('worker-checkbox-list');
+    list.innerHTML = workers.map(w => `
+      <label class="worker-checkbox-item">
+        <input type="checkbox" value="${w.id}" ${preWorkerId && String(preWorkerId) === String(w.id) ? 'checked' : ''}>
+        <span>${esc(w.name)}${w.phone ? `<small style="color:var(--text-muted);margin-left:6px;">${esc(w.phone)}</small>` : ''}</span>
+      </label>
+    `).join('');
+    // Update counter on change
+    list.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', updateWorkerCount);
+    });
+    updateWorkerCount();
+  }
 
   if (preLocationId) document.getElementById('shift-location-select').value = preLocationId;
-  else if (shift) document.getElementById('shift-location-select').value = shift.location_id;
+  else if (isEdit) document.getElementById('shift-location-select').value = shift.location_id;
 
   document.getElementById('shift-modal').classList.add('open');
+}
+
+function updateWorkerCount() {
+  const checked = document.querySelectorAll('#worker-checkbox-list input:checked').length;
+  const el = document.getElementById('worker-selected-count');
+  if (el) el.textContent = checked > 0 ? `(${checked} zgjedhur)` : '';
 }
 
 async function openShiftEdit(id) {
@@ -691,8 +717,7 @@ async function openShiftEdit(id) {
 
 document.getElementById('shift-save-btn').onclick = async () => {
   const id = document.getElementById('shift-id').value;
-  const body = {
-    worker_id: document.getElementById('shift-worker-select').value,
+  const baseBody = {
     location_id: document.getElementById('shift-location-select').value,
     date: document.getElementById('shift-date').value,
     start_time: document.getElementById('shift-start').value,
@@ -700,13 +725,45 @@ document.getElementById('shift-save-btn').onclick = async () => {
     status: document.getElementById('shift-status').value,
     note: document.getElementById('shift-note').value
   };
+
+  if (!baseBody.location_id) return showToast('Zgjedh një lokacion', 'error');
+  if (!baseBody.date) return showToast('Zgjidh datën', 'error');
+  if (!baseBody.start_time) return showToast('Zgjidh orën', 'error');
+  if (!baseBody.duration_hours) return showToast('Shto kohëzgjatjen', 'error');
+
   try {
-    if (id) await API('/shifts/' + id, { method: 'PUT', body });
-    else await API('/shifts', { method: 'POST', body });
+    if (id) {
+      // EDIT — single worker
+      const body = { ...baseBody, worker_id: document.getElementById('shift-worker-select').value };
+      if (!body.worker_id) return showToast('Zgjedh punëtorin', 'error');
+      await API('/shifts/' + id, { method: 'PUT', body });
+      showToast('Turni u përditësua', 'success');
+    } else {
+      // CREATE — multi worker
+      const checkedBoxes = document.querySelectorAll('#worker-checkbox-list input:checked');
+      if (checkedBoxes.length === 0) return showToast('Zgjedh të paktën një punëtor', 'error');
+
+      const workerIds = Array.from(checkedBoxes).map(cb => cb.value);
+      const errors = [];
+      let created = 0;
+      for (const wid of workerIds) {
+        try {
+          await API('/shifts', { method: 'POST', body: { ...baseBody, worker_id: wid } });
+          created++;
+        } catch (e) {
+          const wName = workers.find(w => String(w.id) === String(wid))?.name || wid;
+          errors.push(`${wName}: ${e.message}`);
+        }
+      }
+      if (errors.length > 0) {
+        showToast(`${created} turn(e) u shtuan. Konflikte: ${errors.join(' | ')}`, 'error');
+      } else {
+        showToast(`${created} turn${created > 1 ? 'e' : ''} u shtuan`, 'success');
+      }
+    }
     document.getElementById('shift-modal').classList.remove('open');
-    showToast(id ? 'Turni u përditësua' : 'Turni u shtua', 'success');
     if (currentPage === 'shifts') loadShifts();
-    else if (currentPage === 'dashboard') loadDashboard();
+    else loadDashboard();
   } catch (e) { showToast(e.message, 'error'); }
 };
 

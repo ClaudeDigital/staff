@@ -298,17 +298,26 @@
 
 <!-- Shift Modal -->
 <div class="modal-overlay" id="shift-modal">
-  <div class="modal">
+  <div class="modal" style="max-width:560px;">
     <div class="modal-header">
       <h3 id="shift-modal-title">Shto Turn</h3>
       <button class="close-btn" data-close="shift-modal">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="shift-id">
-      <div class="form-group">
+
+      <!-- Single worker (edit mode) -->
+      <div class="form-group" id="worker-single-group">
         <label>Punëtori *</label>
         <select id="shift-worker-select"></select>
       </div>
+
+      <!-- Multi worker (create mode) -->
+      <div class="form-group" id="worker-multi-group" style="display:none;">
+        <label>Punëtorët * <span id="worker-selected-count" style="font-size:0.78rem;color:var(--primary);font-weight:600;"></span></label>
+        <div id="worker-checkbox-list" style="max-height:160px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:6px 4px;background:var(--bg);"></div>
+      </div>
+
       <div class="form-group">
         <label>Lokacioni *</label>
         <select id="shift-location-select"></select>
