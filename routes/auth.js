@@ -3,6 +3,12 @@ const router = express.Router();
 
 const USERS = [
   {
+    username: 'gezim',
+    password: 'gezim123',
+    role: 'admin',
+    displayName: 'Gezim'
+  },
+  {
     username: process.env.ADMIN_USERNAME || 'admin',
     password: process.env.ADMIN_PASSWORD || 'admin123',
     role: 'admin',
