@@ -24,8 +24,9 @@ function requireAuth(req, res, next) {
 
 // Write middleware — only admin can create/update/delete
 function requireAdmin(req, res, next) {
-  if (req.session && req.session.loggedIn && req.session.role === 'admin') return next();
   if (req.method === 'GET') return next();
+  const role = req.session.role || 'admin'; // default admin for old sessions
+  if (req.session && req.session.loggedIn && role === 'admin') return next();
   res.status(403).json({ error: 'Nuk keni leje për këtë veprim' });
 }
 

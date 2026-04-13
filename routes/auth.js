@@ -42,9 +42,10 @@ router.post('/logout', (req, res) => {
 });
 
 router.get('/me', (req, res) => {
+  const loggedIn = !!req.session.loggedIn;
   res.json({
-    loggedIn: !!req.session.loggedIn,
-    role: req.session.role || null,
+    loggedIn,
+    role: loggedIn ? (req.session.role || 'admin') : null,
     displayName: req.session.displayName || null
   });
 });
