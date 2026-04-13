@@ -30,6 +30,29 @@ function requireAdmin(req, res, next) {
   res.status(403).json({ error: 'Nuk keni leje për këtë veprim' });
 }
 
+// Auto-complete expired shifts
+const db = require('./db');
+function autoCompleteExpiredShifts() {
+  try {
+    const result = db.prepare(`
+      UPDATE shifts
+      SET status = 'completed'
+      WHERE status = 'planned'
+      AND datetime(date || ' ' || start_time, '+' || CAST(ROUND(duration_hours * 60) AS INTEGER) || ' minutes')
+          < datetime('now', 'localtime')
+    `).run();
+    if (result.changes > 0) {
+      console.log(`[auto-complete] ${result.changes} turne u shënuan si të kryera`);
+    }
+  } catch (e) {
+    console.error('[auto-complete] gabim:', e.message);
+  }
+}
+
+// Run on startup + every 5 minutes
+autoCompleteExpiredShifts();
+setInterval(autoCompleteExpiredShifts, 5 * 60 * 1000);
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/workers', requireAuth, requireAdmin, require('./routes/workers'));
