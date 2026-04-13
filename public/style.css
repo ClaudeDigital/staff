@@ -704,6 +704,94 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .worker-checkbox-item span { flex: 1; }
 
+/* ── MONTHLY CALENDAR ──────────────────────── */
+.mcal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--primary);
+  color: rgba(255,255,255,0.85);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+}
+.mcal-weekdays div { padding: 8px 4px; }
+
+.mcal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+}
+
+.mcal-cell {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  min-height: 80px;
+  padding: 4px;
+  cursor: pointer;
+  transition: background 0.12s;
+  position: relative;
+}
+.mcal-cell:hover { background: #f0f4f8; }
+.mcal-cell.other-month { background: #f8fafc; }
+.mcal-cell.other-month .mcal-day-num { color: #cbd5e0; }
+.mcal-cell.is-today { background: #eff6ff; }
+.mcal-cell.is-today .mcal-day-num {
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mcal-cell.has-shifts { background: #fafcff; }
+
+.mcal-day-num {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 3px;
+}
+
+.mcal-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 0 2px;
+}
+
+.mcal-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.mcal-dot.planned   { background: #3b82f6; }
+.mcal-dot.completed { background: #10b981; }
+.mcal-dot.cancelled { background: #ef4444; }
+
+.mcal-count {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-top: 2px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .mcal-cell { min-height: 56px; padding: 3px; }
+  .mcal-weekdays div { padding: 6px 2px; font-size: 0.65rem; }
+  .mcal-day-num { font-size: 0.7rem; }
+  .mcal-dot { width: 6px; height: 6px; }
+}
+
 /* Utility */
 .hidden { display: none !important; }
 .mt-16 { margin-top: 16px; }

@@ -318,6 +318,92 @@ function getWeekNumber(d) {
   return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
 }
 
+// ── MONTHLY CALENDAR ─────────────────────────
+let mcalDate = new Date();
+
+const MONTH_NAMES = ['Janar','Shkurt','Mars','Prill','Maj','Qershor','Korrik','Gusht','Shtator','Tetor','Nëntor','Dhjetor'];
+
+document.getElementById('open-month-cal-btn').onclick = () => {
+  mcalDate = new Date(weekDate);
+  openMonthCalModal();
+};
+document.getElementById('mcal-prev').onclick  = () => { mcalDate.setMonth(mcalDate.getMonth() - 1); renderMonthCal(); };
+document.getElementById('mcal-next').onclick  = () => { mcalDate.setMonth(mcalDate.getMonth() + 1); renderMonthCal(); };
+document.getElementById('mcal-today').onclick = () => { mcalDate = new Date(); renderMonthCal(); };
+
+async function openMonthCalModal() {
+  document.getElementById('month-cal-modal').classList.add('open');
+  await renderMonthCal();
+}
+
+async function renderMonthCal() {
+  const year  = mcalDate.getFullYear();
+  const month = mcalDate.getMonth(); // 0-based
+
+  document.getElementById('mcal-title').textContent = `${MONTH_NAMES[month]} ${year}`;
+
+  // First and last day of month
+  const firstDay = new Date(year, month, 1);
+  const lastDay  = new Date(year, month + 1, 0);
+
+  // Date range: start from Monday of first week, end on Sunday of last week
+  const startDow = (firstDay.getDay() + 6) % 7; // 0=Mon
+  const endDow   = (lastDay.getDay() + 6) % 7;  // 0=Mon
+  const gridStart = new Date(firstDay);
+  gridStart.setDate(firstDay.getDate() - startDow);
+  const gridEnd = new Date(lastDay);
+  gridEnd.setDate(lastDay.getDate() + (6 - endDow));
+
+  const fmt = d => d.toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Fetch all shifts for the visible range
+  let shifts = [];
+  try {
+    shifts = await API(`/shifts?date_from=${fmt(gridStart)}&date_to=${fmt(gridEnd)}`);
+  } catch {}
+
+  // Group by date
+  const byDate = {};
+  shifts.forEach(s => {
+    if (!byDate[s.date]) byDate[s.date] = [];
+    byDate[s.date].push(s);
+  });
+
+  // Build cells
+  const cells = [];
+  const cur = new Date(gridStart);
+  while (cur <= gridEnd) {
+    cells.push(new Date(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  document.getElementById('mcal-grid').innerHTML = cells.map(day => {
+    const ds        = fmt(day);
+    const isToday   = ds === today;
+    const inMonth   = day.getMonth() === month;
+    const dayShifts = byDate[ds] || [];
+    const hasShifts = dayShifts.length > 0;
+
+    // Max 7 dots, then show "+N"
+    const maxDots = 7;
+    const dots    = dayShifts.slice(0, maxDots);
+    const extra   = dayShifts.length - maxDots;
+
+    return `
+      <div class="mcal-cell${!inMonth ? ' other-month' : ''}${isToday ? ' is-today' : ''}${hasShifts ? ' has-shifts' : ''}"
+           onclick="openDayModal('${ds}', '${dayNames[(day.getDay()+6)%7]} ${day.getDate()}/${day.getMonth()+1}')">
+        <div class="mcal-day-num">${day.getDate()}</div>
+        ${hasShifts ? `
+          <div class="mcal-dots">
+            ${dots.map(s => `<div class="mcal-dot ${s.status}" title="${esc(s.worker_name)}"></div>`).join('')}
+          </div>
+          ${dayShifts.length > 1 ? `<div class="mcal-count">${dayShifts.length} turne</div>` : ''}
+        ` : ''}
+      </div>`;
+  }).join('');
+}
+
 function openDayModal(dateStr, dayLabel) {
   const shifts = (window._weekShiftsByDate || {})[dateStr] || [];
   document.getElementById('day-modal-title').textContent = `📅 ${dayLabel}`;

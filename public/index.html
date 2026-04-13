@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>STAFI</title>
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 
@@ -86,6 +86,7 @@
                 <span class="week-label" id="week-label"></span>
                 <button class="btn btn-ghost btn-sm" id="week-next">Pas →</button>
                 <button class="btn btn-ghost btn-sm" id="week-today">Sot</button>
+                <button class="btn btn-primary btn-sm" id="open-month-cal-btn" style="margin-left:8px;">🗓 Kalendari</button>
               </div>
             </div>
             <div class="card-body">
@@ -372,6 +373,32 @@
   </div>
 </div>
 
+<!-- Monthly Calendar Modal -->
+<div class="modal-overlay" id="month-cal-modal">
+  <div class="modal" style="max-width:720px;width:96vw;">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="btn btn-ghost btn-sm" id="mcal-prev">←</button>
+        <h3 id="mcal-title" style="min-width:160px;text-align:center;">Prill 2026</h3>
+        <button class="btn btn-ghost btn-sm" id="mcal-next">→</button>
+        <button class="btn btn-ghost btn-sm" id="mcal-today">Sot</button>
+      </div>
+      <button class="close-btn" data-close="month-cal-modal">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0;">
+      <div class="mcal-weekdays">
+        <div>Hën</div><div>Mar</div><div>Mër</div><div>Enj</div><div>Pre</div><div>Sht</div><div>Die</div>
+      </div>
+      <div class="mcal-grid" id="mcal-grid"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:flex-start;font-size:0.78rem;color:var(--text-muted);gap:16px;">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:4px;"></span>I planifikuar</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;margin-right:4px;"></span>I kryer</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:4px;"></span>I anuluar</span>
+    </div>
+  </div>
+</div>
+
 <!-- Day Detail Modal -->
 <div class="modal-overlay" id="day-modal">
   <div class="modal" style="max-width:520px;">
@@ -402,6 +429,6 @@
 <!-- Toast -->
 <div id="toast"></div>
 
-<script src="app.js?v=8"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>
