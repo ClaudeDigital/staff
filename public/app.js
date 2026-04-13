@@ -278,7 +278,7 @@ async function renderWeekCalendar() {
   document.getElementById('week-label').textContent =
     `${fmtDate(monday)} – ${fmtDate(sunday)}`;
 
-  const data = await API(`/shifts?week=${days[0].getFullYear()}-W${String(getWeekNumber(days[0])).padStart(2,'0')}`);
+  const data = await API(`/shifts?date_from=${monday}&date_to=${sunday}`);
   // Group by date
   const byDate = {};
   data.forEach(s => {
