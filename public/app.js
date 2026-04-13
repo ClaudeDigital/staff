@@ -38,14 +38,24 @@ function confirm(title, msg) {
 // ── AUTH ─────────────────────────────────────
 const loginScreen = document.getElementById('login-screen');
 const appEl = document.getElementById('app');
+let currentRole = null;
+
+function applyRole(role) {
+  currentRole = role;
+  const isAdmin = role === 'admin';
+  // Show/hide admin-only elements
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.classList.toggle('hidden', !isAdmin);
+  });
+}
 
 document.getElementById('login-form').onsubmit = async (e) => {
   e.preventDefault();
   const err = document.getElementById('login-error');
   err.style.display = 'none';
   try {
-    await API('/auth/login', { method: 'POST', body: { username: document.getElementById('login-user').value, password: document.getElementById('login-pass').value } });
-    startApp();
+    const res = await API('/auth/login', { method: 'POST', body: { username: document.getElementById('login-user').value, password: document.getElementById('login-pass').value } });
+    startApp(res.role, res.displayName);
   } catch (ex) {
     err.textContent = ex.message;
     err.style.display = 'block';
@@ -56,19 +66,31 @@ document.getElementById('logout-btn').onclick = async () => {
   await API('/auth/logout', { method: 'POST' });
   loginScreen.classList.remove('hidden');
   appEl.classList.add('hidden');
+  currentRole = null;
 };
 
 async function init() {
   try {
     const me = await API('/auth/me');
-    if (me.loggedIn) startApp();
+    if (me.loggedIn) startApp(me.role, me.displayName);
     else { loginScreen.classList.remove('hidden'); }
   } catch { loginScreen.classList.remove('hidden'); }
 }
 
-function startApp() {
+function startApp(role, displayName) {
   loginScreen.classList.add('hidden');
   appEl.classList.remove('hidden');
+  applyRole(role);
+  // Show username in sidebar footer
+  const footer = document.querySelector('.sidebar-footer');
+  const nameEl = footer.querySelector('#user-display-name');
+  if (!nameEl && displayName) {
+    const span = document.createElement('div');
+    span.id = 'user-display-name';
+    span.style.cssText = 'font-size:0.8rem;color:var(--text-muted);text-align:center;margin-bottom:8px;';
+    span.textContent = '👤 ' + displayName;
+    footer.insertBefore(span, footer.firstChild);
+  }
   loadAllData();
   navigateTo('dashboard');
 }
@@ -264,16 +286,23 @@ async function renderWeekCalendar() {
     byDate[s.date].push(s);
   });
 
+  // Store shifts data for day-modal access
+  window._weekShiftsByDate = byDate;
+
   document.getElementById('week-grid').innerHTML = days.map((day, i) => {
     const dateStr = day.toISOString().slice(0, 10);
     const isToday = dateStr === today;
     const dayShifts = byDate[dateStr] || [];
+    const hasShifts = dayShifts.length > 0;
     return `
-      <div class="week-day${isToday ? ' today' : ''}">
-        <div class="week-day-header">${dayNames[i]}<br>${day.getDate()}/${day.getMonth()+1}</div>
+      <div class="week-day${isToday ? ' today' : ''}${hasShifts ? ' has-shifts' : ''}" onclick="openDayModal('${dateStr}', '${dayNames[i]} ${day.getDate()}/${day.getMonth()+1}')">
+        <div class="week-day-header">
+          ${dayNames[i]}<br>${day.getDate()}/${day.getMonth()+1}
+          ${hasShifts ? `<span class="day-shift-count">${dayShifts.length}</span>` : ''}
+        </div>
         <div class="week-day-body">
-          ${dayShifts.length ? dayShifts.map(s => `
-            <div class="shift-chip ${s.status}" onclick="openShiftEdit(${s.id})" title="${esc(s.worker_name)} @ ${esc(s.location_name)}">
+          ${hasShifts ? dayShifts.map(s => `
+            <div class="shift-chip ${s.status}" title="${esc(s.worker_name)} @ ${esc(s.location_name)}">
               ${s.start_time} ${esc(s.worker_name.split(' ')[0])}<br>
               <span style="opacity:0.8">${esc(s.location_name)}</span>
             </div>
@@ -290,6 +319,53 @@ function getWeekNumber(d) {
   date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
   const week1 = new Date(date.getFullYear(), 0, 4);
   return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+}
+
+function openDayModal(dateStr, dayLabel) {
+  const shifts = (window._weekShiftsByDate || {})[dateStr] || [];
+  document.getElementById('day-modal-title').textContent = `📅 ${dayLabel}`;
+
+  if (!shifts.length) {
+    document.getElementById('day-modal-body').innerHTML = `
+      <div class="empty-state" style="padding:32px;">
+        <div class="icon">🌙</div>
+        <p>Nuk ka turne këtë ditë</p>
+      </div>`;
+  } else {
+    document.getElementById('day-modal-body').innerHTML = `
+      <div style="padding:0 4px;">
+        ${shifts.map(s => `
+          <div class="day-shift-row ${s.status}">
+            <div class="day-shift-time">${s.start_time}<span style="font-size:0.7rem;color:var(--text-muted);display:block;">${fmtHours(s.duration_hours)}</span></div>
+            <div class="day-shift-info">
+              <div class="day-shift-worker">👷 ${esc(s.worker_name)}</div>
+              <div class="day-shift-location">📍 ${esc(s.location_name)}</div>
+              ${s.note ? `<div class="day-shift-note">💬 ${esc(s.note)}</div>` : ''}
+            </div>
+            <div class="day-shift-meta">
+              ${statusBadge(s.status)}
+              ${currentRole === 'admin' ? `<button class="btn btn-ghost btn-sm admin-only" style="margin-top:6px;" onclick="openShiftEditFromDay(${s.id})">✏️</button>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>`;
+  }
+
+  // Update "Shto Turn" button with pre-filled date
+  const addBtn = document.getElementById('day-add-shift-btn');
+  addBtn.onclick = () => {
+    document.getElementById('day-modal').classList.remove('open');
+    openShiftModal(null, null, null, dateStr);
+  };
+  if (currentRole === 'admin') addBtn.classList.remove('hidden');
+  else addBtn.classList.add('hidden');
+
+  document.getElementById('day-modal').classList.add('open');
+}
+
+function openShiftEditFromDay(id) {
+  document.getElementById('day-modal').classList.remove('open');
+  openShiftEdit(id);
 }
 
 document.getElementById('week-prev').onclick = () => { weekDate.setDate(weekDate.getDate() - 7); renderWeekCalendar(); };
@@ -316,10 +392,10 @@ async function loadWorkers() {
       <td style="max-width:200px;color:var(--text-muted);font-size:0.82rem;">${esc(w.note || '')}</td>
       <td>${fmtHours(h.hours)} <small style="color:var(--text-muted)">(${h.count} turne)</small></td>
       <td>
-        <div class="btn-group">
+        ${currentRole === 'admin' ? `<div class="btn-group">
           <button class="btn btn-ghost btn-sm" onclick="editWorker(${w.id})">✏️</button>
           <button class="btn btn-danger btn-sm" onclick="deleteWorker(${w.id}, '${esc(w.name)}')">🗑️</button>
-        </div>
+        </div>` : ''}
       </td>
     </tr>`;
   }).join('') : '<tr><td colspan="5"><div class="empty-state"><div class="icon">👷</div><p>Nuk ka punëtorë të regjistruar</p></div></td></tr>';
@@ -428,10 +504,10 @@ async function loadLocations() {
       <td>${esc(l.address)}</td>
       <td style="max-width:200px;color:var(--text-muted);font-size:0.82rem;">${esc(l.note || '')}</td>
       <td>
-        <div class="btn-group">
+        ${currentRole === 'admin' ? `<div class="btn-group">
           <button class="btn btn-ghost btn-sm" onclick="editLocation(${l.id})">✏️</button>
           <button class="btn btn-danger btn-sm" onclick="deleteLocation(${l.id}, '${esc(l.name)}')">🗑️</button>
-        </div>
+        </div>` : ''}
       </td>
     </tr>
   `).join('') : '<tr><td colspan="4"><div class="empty-state"><div class="icon">📍</div><p>Nuk ka lokacione të regjistruara</p></div></td></tr>';
@@ -551,17 +627,18 @@ async function loadShifts() {
       <td>${esc(s.location_name)}<br><small style="color:var(--text-muted)">${esc(s.location_address)}</small></td>
       <td>${fmtHours(s.duration_hours)}</td>
       <td>
+        ${currentRole === 'admin' ? `
         <select class="status-select" data-id="${s.id}" style="font-size:0.78rem;padding:4px 8px;border-radius:6px;border:1.5px solid var(--border);">
           <option value="planned" ${s.status==='planned'?'selected':''}>I planifikuar</option>
           <option value="completed" ${s.status==='completed'?'selected':''}>I kryer</option>
           <option value="cancelled" ${s.status==='cancelled'?'selected':''}>I anuluar</option>
-        </select>
+        </select>` : statusBadge(s.status)}
       </td>
       <td>
-        <div class="btn-group">
+        ${currentRole === 'admin' ? `<div class="btn-group">
           <button class="btn btn-ghost btn-sm" onclick="openShiftEdit(${s.id})">✏️</button>
           <button class="btn btn-danger btn-sm" onclick="deleteShift(${s.id})">🗑️</button>
-        </div>
+        </div>` : ''}
       </td>
     </tr>
   `).join('') : '<tr><td colspan="7"><div class="empty-state"><div class="icon">📅</div><p>Nuk ka turne</p></div></td></tr>';
@@ -581,10 +658,10 @@ document.getElementById('shift-filter-btn').onclick = loadShifts;
 document.getElementById('shift-filter-status').onchange = loadShifts;
 document.getElementById('add-shift-btn').onclick = () => openShiftModal();
 
-function openShiftModal(shift = null, preWorkerId = null, preLocationId = null) {
+function openShiftModal(shift = null, preWorkerId = null, preLocationId = null, preDate = null) {
   document.getElementById('shift-modal-title').textContent = shift ? 'Edito Turnin' : 'Shto Turn';
   document.getElementById('shift-id').value = shift ? shift.id : '';
-  document.getElementById('shift-date').value = shift ? shift.date : new Date().toISOString().slice(0, 10);
+  document.getElementById('shift-date').value = shift ? shift.date : (preDate || new Date().toISOString().slice(0, 10));
   document.getElementById('shift-start').value = shift ? shift.start_time : '08:00';
   document.getElementById('shift-duration').value = shift ? shift.duration_hours : '';
   document.getElementById('shift-status').value = shift ? shift.status : 'planned';

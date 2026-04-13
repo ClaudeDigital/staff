@@ -1,14 +1,30 @@
 const express = require('express');
 const router = express.Router();
 
+const USERS = [
+  {
+    username: process.env.ADMIN_USERNAME || 'admin',
+    password: process.env.ADMIN_PASSWORD || 'admin123',
+    role: 'admin',
+    displayName: 'Admin'
+  },
+  {
+    username: process.env.USER2_USERNAME || 'punonjës',
+    password: process.env.USER2_PASSWORD || 'Staff2025!',
+    role: 'viewer',
+    displayName: 'Punonjës'
+  }
+];
+
 router.post('/login', (req, res) => {
   const { username, password } = req.body;
-  const adminUser = process.env.ADMIN_USERNAME || 'admin';
-  const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
+  const user = USERS.find(u => u.username === username && u.password === password);
 
-  if (username === adminUser && password === adminPass) {
+  if (user) {
     req.session.loggedIn = true;
-    res.json({ ok: true });
+    req.session.role = user.role;
+    req.session.displayName = user.displayName;
+    res.json({ ok: true, role: user.role, displayName: user.displayName });
   } else {
     res.status(401).json({ error: 'Kredencialet janë gabim' });
   }
@@ -20,7 +36,11 @@ router.post('/logout', (req, res) => {
 });
 
 router.get('/me', (req, res) => {
-  res.json({ loggedIn: !!req.session.loggedIn });
+  res.json({
+    loggedIn: !!req.session.loggedIn,
+    role: req.session.role || null,
+    displayName: req.session.displayName || null
+  });
 });
 
 module.exports = router;

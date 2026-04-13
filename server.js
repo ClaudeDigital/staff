@@ -22,11 +22,18 @@ function requireAuth(req, res, next) {
   res.status(401).json({ error: 'Jo i autorizuar' });
 }
 
+// Write middleware — only admin can create/update/delete
+function requireAdmin(req, res, next) {
+  if (req.session && req.session.loggedIn && req.session.role === 'admin') return next();
+  if (req.method === 'GET') return next();
+  res.status(403).json({ error: 'Nuk keni leje për këtë veprim' });
+}
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/workers', requireAuth, require('./routes/workers'));
-app.use('/api/locations', requireAuth, require('./routes/locations'));
-app.use('/api/shifts', requireAuth, require('./routes/shifts'));
+app.use('/api/workers', requireAuth, requireAdmin, require('./routes/workers'));
+app.use('/api/locations', requireAuth, requireAdmin, require('./routes/locations'));
+app.use('/api/shifts', requireAuth, requireAdmin, require('./routes/shifts'));
 app.use('/api/reports', requireAuth, require('./routes/reports'));
 
 // Serve frontend

@@ -109,7 +109,7 @@
           <div class="card">
             <div class="card-header">
               <h3>Të gjithë punëtorët</h3>
-              <button class="btn btn-primary btn-sm" id="add-worker-btn">+ Shto Punëtor</button>
+              <button class="btn btn-primary btn-sm admin-only" id="add-worker-btn">+ Shto Punëtor</button>
             </div>
             <div class="table-wrap">
               <table>
@@ -130,7 +130,7 @@
           <div class="card">
             <div class="card-header">
               <h3>Të gjitha lokacionet</h3>
-              <button class="btn btn-primary btn-sm" id="add-location-btn">+ Shto Lokacion</button>
+              <button class="btn btn-primary btn-sm admin-only" id="add-location-btn">+ Shto Lokacion</button>
             </div>
             <div class="table-wrap">
               <table>
@@ -157,7 +157,7 @@
                 <option value="completed">I kryer</option>
                 <option value="cancelled">I anuluar</option>
               </select>
-              <button class="btn btn-primary btn-sm" id="add-shift-btn">+ Shto Turn</button>
+              <button class="btn btn-primary btn-sm admin-only" id="add-shift-btn">+ Shto Turn</button>
             </div>
           </div>
           <div class="card-body" style="padding:12px 20px;">
@@ -333,6 +333,21 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" data-close="shift-modal">Anulo</button>
       <button class="btn btn-primary" id="shift-save-btn">Ruaj</button>
+    </div>
+  </div>
+</div>
+
+<!-- Day Detail Modal -->
+<div class="modal-overlay" id="day-modal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h3 id="day-modal-title">Turnet e ditës</h3>
+      <button class="close-btn" data-close="day-modal">✕</button>
+    </div>
+    <div class="modal-body" id="day-modal-body" style="padding:0;"></div>
+    <div class="modal-footer" id="day-modal-footer">
+      <button class="btn btn-ghost" data-close="day-modal">Mbyll</button>
+      <button class="btn btn-primary admin-only hidden" id="day-add-shift-btn">+ Shto Turn</button>
     </div>
   </div>
 </div>
