@@ -617,16 +617,68 @@ textarea { resize: vertical; min-height: 80px; }
   .sidebar.open { transform: translateX(0); }
   .main { margin-left: 0; padding-bottom: var(--nav-h); }
   .bottom-nav { display: block; }
-  .topbar { display: flex; }
-  .week-grid { grid-template-columns: repeat(7, minmax(100px, 1fr)); overflow-x: auto; }
+  .topbar { display: flex; padding: 0 14px; }
+  .topbar h1 { font-size: 1rem; }
   .form-row { grid-template-columns: 1fr; }
-  .page-content { padding: 16px; }
+  .page-content { padding: 12px; }
+  .card-header { padding: 14px 16px; flex-wrap: wrap; gap: 8px; }
+  .card-body { padding: 12px 16px; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { font-size: 0.82rem; min-width: 500px; }
+
+  /* Week grid — horizontal scroll on mobile */
+  .week-grid {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+    padding-bottom: 6px;
+  }
+  .week-day {
+    min-width: 110px;
+    flex-shrink: 0;
+  }
+
+  /* Stats */
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 14px 12px; }
+  .stat-card .value { font-size: 1.6rem; }
+
+  /* Dashboard grid */
+  #dashboard-grid { grid-template-columns: 1fr !important; }
+
+  /* Modals — full width */
+  .modal { width: 96vw !important; max-width: 96vw !important; margin: 8px; max-height: 92vh; overflow-y: auto; }
+  .modal-body { max-height: 60vh; overflow-y: auto; }
+
+  /* Filters */
+  .filters-bar { flex-direction: column; gap: 8px; }
+  .filter-group { min-width: 100%; }
+  .filter-group input, .filter-group select { width: 100%; }
+
+  /* Bigger touch targets */
+  .btn { min-height: 40px; }
+  .nav-item, .bnav-item { min-height: 44px; }
+  input, select, textarea { font-size: 16px !important; } /* prevent iOS zoom */
+
+  /* Bottom nav larger */
+  .bottom-nav { height: 64px; }
+  :root { --nav-h: 64px; }
+  .bnav-item { font-size: 0.65rem; }
+  .bnav-item .icon { font-size: 1.3rem; }
+
+  /* Day shifts */
+  .day-shift-row { padding: 12px 14px; }
+
+  /* Hide topbar username on small screens */
+  #topbar-user { display: none !important; }
 }
 
 @media (max-width: 480px) {
   .stats-grid { grid-template-columns: 1fr 1fr; }
-  .filters-bar { flex-direction: column; }
-  .filter-group { min-width: 100%; }
+  .page-content { padding: 10px; }
+  .login-box { width: 92vw; padding: 28px 20px; }
+  .topbar h1 { font-size: 0.95rem; }
 }
 
 /* ── WORKER CHECKBOX LIST ──────────────────── */

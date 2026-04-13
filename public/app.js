@@ -62,12 +62,14 @@ document.getElementById('login-form').onsubmit = async (e) => {
   }
 };
 
-document.getElementById('logout-btn').onclick = async () => {
+async function doLogout() {
   await API('/auth/logout', { method: 'POST' });
   loginScreen.classList.remove('hidden');
   appEl.classList.add('hidden');
   currentRole = null;
-};
+}
+document.getElementById('logout-btn').onclick = doLogout;
+document.getElementById('logout-btn-top').onclick = doLogout;
 
 async function init() {
   try {
@@ -81,15 +83,10 @@ function startApp(role, displayName) {
   loginScreen.classList.add('hidden');
   appEl.classList.remove('hidden');
   applyRole(role);
-  // Show username in sidebar footer
-  const footer = document.querySelector('.sidebar-footer');
-  const nameEl = footer.querySelector('#user-display-name');
-  if (!nameEl && displayName) {
-    const span = document.createElement('div');
-    span.id = 'user-display-name';
-    span.style.cssText = 'font-size:0.8rem;color:var(--text-muted);text-align:center;margin-bottom:8px;';
-    span.textContent = '👤 ' + displayName;
-    footer.insertBefore(span, footer.firstChild);
+  // Show username in topbar
+  if (displayName) {
+    const el = document.getElementById('topbar-user');
+    if (el) { el.textContent = '👤 ' + displayName; el.style.display = ''; }
   }
   loadAllData();
   navigateTo('dashboard');
