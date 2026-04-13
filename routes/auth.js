@@ -29,6 +29,7 @@ router.post('/login', (req, res) => {
   if (user) {
     req.session.loggedIn = true;
     req.session.role = user.role;
+    req.session.username = user.username;
     req.session.displayName = user.displayName;
     res.json({ ok: true, role: user.role, displayName: user.displayName });
   } else {
