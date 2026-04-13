@@ -690,6 +690,16 @@ function openShiftModal(shift = null, preWorkerId = null, preLocationId = null, 
   if (preLocationId) document.getElementById('shift-location-select').value = preLocationId;
   else if (isEdit) document.getElementById('shift-location-select').value = shift.location_id;
 
+  // Recurrence — only in create mode
+  const recGroup = document.getElementById('recurrence-group');
+  recGroup.style.display = isEdit ? 'none' : '';
+  if (!isEdit) {
+    document.getElementById('shift-recurrence').value = '';
+    document.getElementById('shift-recurrence-until').value = '';
+    document.getElementById('recurrence-until-group').style.display = 'none';
+    document.getElementById('recurrence-preview').textContent = '';
+  }
+
   document.getElementById('shift-modal').classList.add('open');
 }
 
@@ -697,6 +707,49 @@ function updateWorkerCount() {
   const checked = document.querySelectorAll('#worker-checkbox-list input:checked').length;
   const el = document.getElementById('worker-selected-count');
   if (el) el.textContent = checked > 0 ? `(${checked} zgjedhur)` : '';
+}
+
+// Recurrence helpers
+document.getElementById('shift-recurrence').addEventListener('change', function() {
+  const hasRecurrence = !!this.value;
+  document.getElementById('recurrence-until-group').style.display = hasRecurrence ? '' : 'none';
+  if (!hasRecurrence) {
+    document.getElementById('shift-recurrence-until').value = '';
+    document.getElementById('recurrence-preview').textContent = '';
+  } else {
+    updateRecurrencePreview();
+  }
+});
+
+document.getElementById('shift-recurrence-until').addEventListener('change', updateRecurrencePreview);
+document.getElementById('shift-date').addEventListener('change', updateRecurrencePreview);
+
+function updateRecurrencePreview() {
+  const type = document.getElementById('shift-recurrence').value;
+  const startDate = document.getElementById('shift-date').value;
+  const until = document.getElementById('shift-recurrence-until').value;
+  const preview = document.getElementById('recurrence-preview');
+  if (!type || !startDate || !until) { preview.textContent = ''; return; }
+  const dates = generateRecurrenceDates(startDate, until, type);
+  if (dates.length === 0) { preview.textContent = 'Data e mbarimit duhet të jetë pas datës së fillimit.'; return; }
+  preview.textContent = `→ Do të krijohen ${dates.length} turn${dates.length > 1 ? 'e' : ''} (deri më ${fmtDate(until)})`;
+}
+
+function generateRecurrenceDates(startDate, untilDate, type) {
+  const dates = [];
+  const until = new Date(untilDate + 'T00:00:00');
+  let current = new Date(startDate + 'T00:00:00');
+  const MAX = 365;
+
+  while (current <= until && dates.length < MAX) {
+    dates.push(current.toISOString().slice(0, 10));
+    const next = new Date(current);
+    if (type === 'daily')        next.setDate(current.getDate() + 1);
+    else if (type === 'weekly')  next.setDate(current.getDate() + 7);
+    else if (type === 'monthly') next.setMonth(current.getMonth() + 1);
+    current = next;
+  }
+  return dates;
 }
 
 async function openShiftEdit(id) {
@@ -736,24 +789,38 @@ document.getElementById('shift-save-btn').onclick = async () => {
       await API('/shifts/' + id, { method: 'PUT', body });
       showToast('Turni u përditësua', 'success');
     } else {
-      // CREATE — multi worker
+      // CREATE — multi worker + recurrence
       const checkedBoxes = document.querySelectorAll('#worker-checkbox-list input:checked');
       if (checkedBoxes.length === 0) return showToast('Zgjedh të paktën një punëtor', 'error');
 
       const workerIds = Array.from(checkedBoxes).map(cb => cb.value);
-      const errors = [];
+      const recType = document.getElementById('shift-recurrence').value;
+      const recUntil = document.getElementById('shift-recurrence-until').value;
+
+      // Build list of dates
+      let dates = [baseBody.date];
+      if (recType && recUntil) {
+        dates = generateRecurrenceDates(baseBody.date, recUntil, recType);
+        if (dates.length === 0) return showToast('Data e mbarimit duhet të jetë pas datës së fillimit', 'error');
+      }
+
       let created = 0;
-      for (const wid of workerIds) {
-        try {
-          await API('/shifts', { method: 'POST', body: { ...baseBody, worker_id: wid } });
-          created++;
-        } catch (e) {
-          const wName = workers.find(w => String(w.id) === String(wid))?.name || wid;
-          errors.push(`${wName}: ${e.message}`);
+      const errors = [];
+      for (const dateStr of dates) {
+        for (const wid of workerIds) {
+          try {
+            await API('/shifts', { method: 'POST', body: { ...baseBody, date: dateStr, worker_id: wid } });
+            created++;
+          } catch (e) {
+            const wName = workers.find(w => String(w.id) === String(wid))?.name || wid;
+            errors.push(`${fmtDate(dateStr)} ${wName}: ${e.message}`);
+          }
         }
       }
-      if (errors.length > 0) {
-        showToast(`${created} turn(e) u shtuan. Konflikte: ${errors.join(' | ')}`, 'error');
+      if (errors.length > 0 && created === 0) {
+        showToast(`Gabime: ${errors.slice(0,2).join(' | ')}`, 'error');
+      } else if (errors.length > 0) {
+        showToast(`${created} u shtuan, ${errors.length} konflikte`, 'error');
       } else {
         showToast(`${created} turn${created > 1 ? 'e' : ''} u shtuan`, 'success');
       }

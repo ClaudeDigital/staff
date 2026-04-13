@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>STAFI</title>
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 
@@ -342,6 +342,27 @@
         </div>
       </div>
       <div class="form-group"><label>Shënim</label><textarea id="shift-note" placeholder="Shënim opsional..."></textarea></div>
+
+      <!-- Recurrence (create mode only) -->
+      <div id="recurrence-group" style="display:none;">
+        <div style="height:1px;background:var(--border);margin:8px 0 14px;"></div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Përsëritja</label>
+            <select id="shift-recurrence">
+              <option value="">Vetëm njëherë</option>
+              <option value="daily">Çdo ditë</option>
+              <option value="weekly">Çdo javë</option>
+              <option value="monthly">Çdo muaj</option>
+            </select>
+          </div>
+          <div class="form-group" id="recurrence-until-group" style="display:none;">
+            <label>Deri më</label>
+            <input type="date" id="shift-recurrence-until">
+          </div>
+        </div>
+        <div id="recurrence-preview" style="font-size:0.78rem;color:var(--primary);margin-top:4px;min-height:18px;"></div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" data-close="shift-modal">Anulo</button>
@@ -380,6 +401,6 @@
 <!-- Toast -->
 <div id="toast"></div>
 
-<script src="app.js?v=6"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>
